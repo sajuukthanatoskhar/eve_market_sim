@@ -1,5 +1,7 @@
 import market_models.item_model
+import logging
 
+logging.basicConfig(format='%(process)d-%(levelname)s-%(message)s')
 DEBUG = True
 
 
@@ -14,7 +16,7 @@ class SimulationComponent:
         pass
 
     def step(self):
-        raise NotImplementedError("Not Implemented yet")
+        logging.warning('SimulationComponent.step:Not Implemented')
 
 
 class MarketComponent(SimulationComponent):
@@ -51,8 +53,8 @@ class MarketComponent(SimulationComponent):
         """
         if len(self.precursor_changes) != 0:
             for item in self.items:
-                raise NotImplementedError
-        raise NotImplementedError  # todo : update the precursors
+                logging.warning('Not Implemented')
+        logging.warning('Not Implemented')
 
     def update_prices(self):
         for item in self.items:
@@ -68,11 +70,11 @@ class MarketComponent(SimulationComponent):
         for item in self.items:
             item.save_history_entry()
 
-        raise NotImplementedError  # todo : update the prices
+        logging.warning('Not Implemented')
 
     def update_max_supply(self):
 
-        raise NotImplementedError
+        logging.warning('Not Implemented')
 
     def add_max_supply_entry(self, value: dict):
         # dict is item_name: value
