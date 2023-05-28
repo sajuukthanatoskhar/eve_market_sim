@@ -1,6 +1,8 @@
 import dataclasses
 import datetime
 
+import p_q_models
+
 
 class ItemMarketHistory:
     def __init__(self):
@@ -33,6 +35,7 @@ class Item:
         self.volatility_coef = 1
         self.region = region
         self.history: list[ItemHistoryEntry] = []
+        self.model : p_q_models.base_p_q_model|None = None
 
         if max_supply:
             self.max_supply = max_supply
