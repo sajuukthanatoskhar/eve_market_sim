@@ -17,7 +17,6 @@ from matplotlib import pyplot as plt
 
 from basic import generate_white_gaussian_noise
 
-import Inventoryf
 
 
 @dataclasses.dataclass
@@ -227,13 +226,16 @@ class Extraction_PQ_Model(base_p_q_model):
 
         self.p_out.append(self.p_out[-1] - self.p_out[-1] * ((self.q_dot_memory[-1]) / self.q_out[-1]))
 
-    def solve_quantity(self, quantity_inputs: list):
+    def solve_quantity(self, quantity_inputs: list[InputMaterial]):
 
         i: InputMaterial | int
         for i in quantity_inputs:
             try:
                 if i.name == self.name:
-                    self.q_dot += i.amount
+                    if i.amount > 0:
+                        self.q_dot += i.amount * self.greedgain[self.time_t[-1]]
+                    else:
+                        self.q_dot += i.amount
             except AttributeError:
                 self.q_dot += i
 
@@ -247,8 +249,8 @@ class Extraction_PQ_Model(base_p_q_model):
     def reset_requested_materials(self):
         self.requested_materials = []
 
-    def iterate_model(self, inputs: list[InputMaterial | float | int]):
-        self.greedgain.append(self.get_greedGain(self.p_out[0], self.p_out[-1]))
+    def iterate_model(self, inputs: list[InputMaterial | float | int] = []):
+        self.greedgain.append(self.get_greedGain(self.p_out[0], self.p_out[-1], a = 1))
         self.solve_quantity(inputs)
         self.solve_price()
 
@@ -301,6 +303,8 @@ class Precursor_PQ_Model(base_p_q_model):
         @param requested_materials: are output materials that have been requested else where.
         @return:
         """
+        self.greedgain.append(self.get_greedGain(self.p_out[0], self.p_out[-1]))
+
         self.deliver_stuff_into_production(inputs)
 
         outputs = self.deliver_stuff_out_of_production()
@@ -406,8 +410,6 @@ class Precursor_PQ_Model(base_p_q_model):
 
 if __name__ == '__main__':
     sim_len = 100
-
-    inventory = Inventoryf.Inventory("Global")
     t_int = 1  # days
     Timet = list(range(0, 100, 1))
     some_coal = Extraction_PQ_Model(p0=10, q0=800, name="Coal")
