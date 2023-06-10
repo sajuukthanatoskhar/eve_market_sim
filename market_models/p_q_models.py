@@ -407,6 +407,22 @@ class Precursor_PQ_Model(base_p_q_model):
                 if input_conn.name == requested_material.name:
                     input_conn.requested_materials.append(InputMaterial(requested_material.name, int(requested_material.amount)*self.get_build_runs()))
 
+class Modeltype:
+    model_type_extraction = 'extraction'
+    model_type_precurser = 'precursor'
+class PQModelFactory:
+    """
+    Factory for P_Q Model creation
+    """
+    @staticmethod
+    def create(model_type, p0 = 10, q0= 10, name= "A resource") -> base_p_q_model:
+        if model_type == Modeltype.model_type_extraction:
+            return Extraction_PQ_Model(p0, q0, name)
+        elif model_type == Modeltype.model_type_precurser:
+            return Precursor_PQ_Model(p0, q0, name)
+        else:
+            return None
+
 
 if __name__ == '__main__':
     sim_len = 100
