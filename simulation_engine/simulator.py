@@ -37,6 +37,8 @@ class MarketComponent(SimulationComponent):
         self.change_precursors()
         self.update_prices()
         self.update_histories()
+        self.predict_prices()
+        # self.predict_quantities() # May not be needed
         if DEBUG:
             print("Market Step process completed")
 
@@ -139,6 +141,20 @@ class MarketComponent(SimulationComponent):
             if item.name == item_to_modify:
                 return item.add_prec_pointer(precursor)
         return False
+
+    def predict_prices(self):
+        """
+        Based off Kalman filter process, Nd perhaps (?)
+
+        1. Take current prices from Time t_k
+        2. Look at previous prices from time t_(k-1)
+        3. Volatility determined as a factor from a DTFT (??)
+        4. Sureity of massive price change due to catastrophic event?
+            Quantities of precursors that change
+
+        :return:
+        """
+        pass
 
 
 class Simulator:

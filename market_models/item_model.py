@@ -77,28 +77,6 @@ class Item:
             self.current_price *= self.volatility_coef * (1 + (self.max_supply - self.total_supply) / self.max_supply)
 
     def add_to_precursor_list(self):
-        pass
-
-    def get_destroyed_in_region(self) -> int:
-        """
-
-        """
-        pass
-
-    def get_built_inregion(self) -> int:
-        """
-
-        """
-        pass
-
-    def calculate_new_orders(self) -> int:
-        pass
-
-    def get_date(self) -> datetime.datetime:
-        pass
-
-    def make_note(self) -> str:
-        pass
 
 
 class ItemBlueprint:
@@ -121,8 +99,8 @@ def recalculate_price(item):
 if __name__ == '__main__':
     market_items = []
 
-    market_items.append(Item([ItemBlueprint("Iron", 5),
-                              ItemBlueprint("Coal", 1)],
+    market_items.append(Item([Item_Blueprint("Iron", 5),
+                              Item_Blueprint("Coal", 1)],
                              100, 10, "Steel"))
     market_items.append(Item([], 200, 1, "Iron"))
     market_items.append(Item([], 200, 2, "Coal"))

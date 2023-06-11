@@ -6,7 +6,7 @@ from typing import Dict, Any, Type
 from matplotlib import pyplot as plt
 
 from market_models.Inventoryf import Inventory
-from market_models.p_q_models import Extraction_PQ_Model, Precursor_PQ_Model, InputMaterial, Precursor, base_p_q_model, \
+from market_models.p_q_models import Resource_Input_Model, Extraction_PQ_Model, Precursor_PQ_Model, InputMaterial, Precursor, base_p_q_model, \
     PQModelFactory
 
 
@@ -17,8 +17,12 @@ class ModelManager:
         """
         self.models = []
         self.location = ""
-        self.random_inputs = []
+        self.random_inputs : list[Resource_Input_Model] = []
+        self.random_input_models : list[Resource_Input_Model] = []
         self.extraction_inputs = dict
+
+
+
     def add_model(self, model: base_p_q_model | PQModelFactory) -> bool:
         """
         Adds a model
@@ -89,6 +93,8 @@ class ModelManager:
     def add_discrete_extraction_input(self, name, min, max) -> None:
         """
         Adds a discrete extraction input function, this is called in a Extraction_PQ_Model.
+
+        !!Deprecated!!
         @param name:
         @param min:
         @param max:
@@ -106,26 +112,39 @@ class ModelManager:
         """
         return InputMaterial(name, self.make_single_random_value(min_value, max_value))
 
-    def run_simulation(self, sim_len, inputs: dict):
+    def run_simulation(self, sim_len : int, t_interval : float = 1) -> None:
+        """
+        Runs the simulation and poops out alot of graphs
+        @param sim_len: is the simulation max length, typically thought of as number of days, but can be minutes, hours, whatever.
+        :param t_interval: at the moment, this should be set to 1 since python floats do weird things and I haven't tested it.  If you want to simulate hours, set sim_len to number of hours.
+        @return: None
         """
 
-        @param sim_len:
-        @return:
-        """
-
-        t_int = 1  # days
-        Timet = list(range(0, sim_len, t_int))
-
-        for a_time_unit in Timet:
-            for model in self.models:
-                if isinstance(model, Extraction_PQ_Model):
-
-                    model.iterate_model([inputs[model.name]()]) # input model function is called here
-                else:
-                    model.iterate_model()
-            base_p_q_model.set_Timet()
-
+        Timet = list(range(0, sim_len, t_interval))
+        self.run_core_simulation(Timet)
         self.create_graphs_and_show(Timet)
+
+    def run_core_simulation(self, Timet: object) -> object:
+        """
+        Runs the collection of resources at timeT
+        :param Timet:
+        :return:
+        """
+        for a_time_unit in Timet:
+            collected_resources = self.collect_resources_from_rims()
+            self.iterate_p_q_models(collected_resources)
+            self.increment_p_q_model_timers()
+            self.attacks_on_resources()
+
+    def iterate_p_q_models(self, collected_resources):
+        for model in self.models:
+            if isinstance(model, Extraction_PQ_Model):
+                model.iterate_model(collected_resources)  # input model function is called here
+            else:
+                model.iterate_model()
+
+    def increment_p_q_model_timers(self):
+        base_p_q_model.set_Timet()
 
     def create_graphs_and_show(self, Timet):
         for model in self.models:
@@ -145,6 +164,31 @@ class ModelManager:
 
     def generate_extraction_inputs(self) -> dict:
         return self.extraction_inputs
+
+    def create_random_input_model(self, r_i_m_name, amount, time_interval, timer, quantity, resource):
+        self.random_inputs.append(Resource_Input_Model(name = r_i_m_name, amount = amount,
+                                                       interval = time_interval, timer = timer, quantity = quantity,
+                                                       resource = resource))
+
+    def collect_resources_from_rims(self) -> list[InputMaterial]:
+        """
+        Collects all resources (doesn't collate or combine)
+        :return:
+        """
+        rim_model: Resource_Input_Model
+        resources_collected = []
+        for rim_model in self.random_inputs:
+            resources_collected.append(rim_model.output_resource())
+
+        return resources_collected
+
+    def attacks_on_resources(self):
+        """
+        Unimplemented simulation of attacks on collectors, which will decrease the total amount of incoming resources
+
+        :return:
+        """
+        return None
 
 
 def generate_extraction_inputs(manager) -> dict:
@@ -192,4 +236,4 @@ if __name__ == '__main__':
     manager.add_connection("Coal", "Steel")
     manager.add_connection("Iron", "Steel")
 
-    manager.run_simulation(100, manager.generate_extraction_inputs)
+    manager.run_simulation(100)

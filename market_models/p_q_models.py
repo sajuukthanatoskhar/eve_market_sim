@@ -18,7 +18,6 @@ from matplotlib import pyplot as plt
 from basic import generate_white_gaussian_noise
 
 
-
 @dataclasses.dataclass
 class Precursor:
     """
@@ -32,6 +31,7 @@ class Precursor:
 class InputMaterial:
     name: str
     amount: int
+    origin : str = "Unknown"
 
 
 @dataclasses.dataclass
@@ -63,7 +63,7 @@ class base_p_q_model:
         cls.time_t.append(cls.time_t[-1] + 1)
 
     def __init__(self, p0=0, q0=0, name="A_Commodity"):
-        self.requested_materials : list[InputMaterial] = [InputMaterial(name, 0)]
+        self.requested_materials: list[InputMaterial] = [InputMaterial(name, 0)]
         self.p0: float = p0
         self.q0: int = q0
         self.q_out = [q0]
@@ -142,7 +142,7 @@ class base_p_q_model:
 
     def check_availability_of_materials(self, requested_material: InputMaterial, runs):
 
-        if self.q_out[self.time_t[-1]] >= int(requested_material.amount)*runs:
+        if self.q_out[self.time_t[-1]] >= int(requested_material.amount) * runs:
             return True  # If there is enough
         return False
 
@@ -243,14 +243,14 @@ class Extraction_PQ_Model(base_p_q_model):
         self.reset_requested_materials()
         self.q_dot_memory.append(self.q_dot)
 
-        self.q_out.append(max(self.q_dot + self.q_out[-1],1))
+        self.q_out.append(max(self.q_dot + self.q_out[-1], 1))
         self.q_dot = 0
 
     def reset_requested_materials(self):
         self.requested_materials = []
 
     def iterate_model(self, inputs: list[InputMaterial | float | int] = []):
-        self.greedgain.append(self.get_greedGain(self.p_out[0], self.p_out[-1], a = 1))
+        self.greedgain.append(self.get_greedGain(self.p_out[0], self.p_out[-1], a=1))
         self.solve_quantity(inputs)
         self.solve_price()
 
@@ -269,9 +269,9 @@ class Extraction_PQ_Model(base_p_q_model):
 
 class Precursor_PQ_Model(base_p_q_model):
 
-    def __init__(self, p0=0, q0=0, name="A_Commodity", precursors: list[Precursor] = None,
-                 production_time = 1, no_of_factory_lines = 1, build_output = 100,
-                 production_set_quantity = 1):
+    def __init__(self, p0=0, q0=0, name="A_Commodity", precursors: list[Precursor] = [],
+                 production_time=1, no_of_factory_lines=1, build_output=100,
+                 production_set_quantity=1):
         """
 
         @param p0: price at time 0
@@ -285,11 +285,11 @@ class Precursor_PQ_Model(base_p_q_model):
         """
         super().__init__(p0=p0, q0=q0, name=name)
         self.precursor_list: list[Precursor] = precursors
-        self.no_of_factories: int = 1  # For the precursor stuff
-        self.production_time_to_build: int = 1
-        self.production_set_quantity: int = 1
+        self.no_of_factories: int = no_of_factory_lines  # For the precursor stuff
+        self.production_time_to_build: int = production_time
+        self.production_set_quantity: int = production_set_quantity
         self.stuff_in_production: list[InProduction] = []
-        self.build_output = 100
+        self.build_output = build_output
         self.required_materials_from_connections: list[InputMaterial] = []
 
     def get_requested_materials(self, matname):
@@ -405,21 +405,30 @@ class Precursor_PQ_Model(base_p_q_model):
         for input_conn in self.input_connection:
             for requested_material in self.required_materials_from_connections:
                 if input_conn.name == requested_material.name:
-                    input_conn.requested_materials.append(InputMaterial(requested_material.name, int(requested_material.amount)*self.get_build_runs()))
+                    input_conn.requested_materials.append(
+                        InputMaterial(requested_material.name, int(requested_material.amount) * self.get_build_runs()))
+
 
 class Modeltype:
     model_type_extraction = 'extraction'
     model_type_precurser = 'precursor'
+
+
 class PQModelFactory:
     """
     Factory for P_Q Model creation
     """
+
     @staticmethod
-    def create(model_type, p0 = 10, q0= 10, name= "A resource") -> base_p_q_model:
+    def create(model_type, p0=10, q0=10, name="A resource", **kwargs) -> base_p_q_model:
+
+
+
+
         if model_type == Modeltype.model_type_extraction:
-            return Extraction_PQ_Model(p0, q0, name)
+            return Extraction_PQ_Model(p0 = p0, q0 = q0, name = name)
         elif model_type == Modeltype.model_type_precurser:
-            return Precursor_PQ_Model(p0, q0, name)
+            return Precursor_PQ_Model(p0 = p0, q0 = q0, name = name, **kwargs)
         else:
             return None
 
@@ -437,8 +446,8 @@ if __name__ == '__main__':
                                     precursors=[Precursor("Iron", "5"),
                                                 Precursor("Coal", "20")])
     some_hard_steel = Precursor_PQ_Model(p0=500, q0=1000, name="Hard Steel",
-                                    precursors=[Precursor("Iron", "10"),
-                                                Precursor("Coal", "1")])
+                                         precursors=[Precursor("Iron", "10"),
+                                                     Precursor("Coal", "1")])
     some_coal.add_output_connection(some_steel)
     some_iron.add_output_connection(some_steel)
 
@@ -458,7 +467,6 @@ if __name__ == '__main__':
     some_iron.show_output(Timet, some_iron.q_out, label="Quantity Output")
     some_iron.show_output(Timet, some_iron.p_out, label="Price Output")
 
-
     some_steel.show_output(Timet, some_steel.q_out, label="Quantity Output")
     some_steel.show_output(Timet, some_steel.p_out, label="Price Output")
 
@@ -472,3 +480,85 @@ if __name__ == '__main__':
     # plt.plot(Timet, some_coal.q_out[:-1])
     # plt.title("Quantity of Goods")
     plt.show()
+
+
+class Resource_Input_Model:
+    """
+    This is the group of resource inputs that either provide a regular amount of resources or are random events
+    These can be thought of as
+
+    a) Miners providing resources, modelled gains/losses over time
+
+    b) One time events such as EVE Battles, thefts, donations
+
+
+    They are 'lazily' added to the model manager and require NO connections.  Why?
+    Because they are inputs and do not store any quantity of materials.
+
+    """
+
+    def __init__(self, name="a_resource", amount: int = 0, interval: int = 5,
+                 timer = 0, quantity = 1, resource = "Tritanium"):
+        self.name: str = name
+        self.amount: int = amount
+        self.interval: int = interval
+        self.resource = resource
+        self.timer: int = timer
+        self.quantity: int = quantity
+
+    def reset_give_timer(self, timer: float | int = 0) -> bool:
+        """
+        Resets the timer in which the R_I_M uses to calculate when it will drop off resources next
+
+        :return: True if successful.
+        """
+        if isinstance(timer, int) or isinstance(timer, float):
+            self.timer = timer
+            return True
+        print("Incorrect type, should be int or float")
+        return False
+
+    def increment_timer(self) -> None:
+        """
+        Increments the timer as part of model iteration
+        :return:
+        """
+        self.timer += 1
+
+    def set_resource(self, resource: str) -> bool:
+        """
+        Sets the resource output of the R_I_M
+        :param resource:
+        :return:
+        """
+        if isinstance(resource, str):
+            self.resource = resource
+            return True
+        print("Incorrect type, should be str")
+        return False
+
+    def set_quantity(self, quantity: int = 1) -> False:
+        """
+        Sets the quantity of ships doing the same thing
+        :param quantity:
+        :return: bool if integer
+        """
+        if isinstance(quantity, int):
+            self.quantity = quantity
+            return True
+        print("Incorrect type, should be int")
+        return False
+
+    def output_resource(self) -> InputMaterial|None:
+        """
+        Outputs a resource if the time is right, increments timer if not
+        Part of iteration
+        :return:
+        """
+        if self.timer == self.interval:
+            self.reset_give_timer()
+            return InputMaterial(self.resource, self.amount*self.quantity, self.name)
+        self.increment_timer()
+        return InputMaterial(self.resource, 0*self.quantity, self.name)
+
+
